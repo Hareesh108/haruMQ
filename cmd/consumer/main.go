@@ -4,31 +4,32 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
-
+)
 
 func main() {
 	topic := flag.String("topic", "", "Topic name")
+	partition := flag.Int("partition", 0, "Partition number")
 	offset := flag.Int64("offset", 0, "Offset to start consuming from")
 	max := flag.Int("max", 10, "Max messages to fetch")
 	addr := flag.String("addr", "http://localhost:9092", "Broker address")
 	flag.Parse()
 
 	if *topic == "" {
-		fmt.Println("Usage: consumer --topic=TOPIC [--offset=N] [--max=M] [--addr=ADDR]")
+		fmt.Println("Usage: consumer --topic=TOPIC [--partition=N] [--offset=N] [--max=M] [--addr=ADDR]")
 		os.Exit(1)
 	}
 
-	url := fmt.Sprintf("%s/consume?topic=%s&offset=%d&max=%d", *addr, *topic, *offset, *max)
+	url := fmt.Sprintf("%s/consume?topic=%s&partition=%d&offset=%d&max=%d", *addr, *topic, *partition, *offset, *max)
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		fmt.Println("Broker error:", string(body))
 		os.Exit(1)
@@ -39,6 +40,6 @@ func main() {
 		os.Exit(1)
 	}
 	for _, m := range msgs {
-		fmt.Printf("[offset=%v] %s\n", m["offset"], m["payload"])
+		fmt.Printf("[partition=%v offset=%v] %s\n", *partition, m["offset"], m["payload"])
 	}
 }

@@ -15,8 +15,9 @@ type Server struct {
 
 func (s *Server) Produce(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Topic   string `json:"topic"`
-		Payload string `json:"payload"`
+		Topic     string `json:"topic"`
+		Payload   string `json:"payload"`
+		Partition int    `json:"partition"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -27,7 +28,8 @@ func (s *Server) Produce(w http.ResponseWriter, r *http.Request) {
 		Payload: []byte(req.Payload),
 		Ts:      time.Now(),
 	}
-	offset, err := s.Log.Append(req.Topic, msg)
+	partition := req.Partition
+	offset, err := s.Log.Append(req.Topic, partition, msg)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -38,10 +40,16 @@ func (s *Server) Produce(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Consume(w http.ResponseWriter, r *http.Request) {
 	topic := r.URL.Query().Get("topic")
+	partitionStr := r.URL.Query().Get("partition")
 	offsetStr := r.URL.Query().Get("offset")
 	maxStr := r.URL.Query().Get("max")
-	if topic == "" || offsetStr == "" {
-		http.Error(w, "missing topic or offset", 400)
+	if topic == "" || offsetStr == "" || partitionStr == "" {
+		http.Error(w, "missing topic, partition or offset", 400)
+		return
+	}
+	partition, err := strconv.Atoi(partitionStr)
+	if err != nil {
+		http.Error(w, "invalid partition", 400)
 		return
 	}
 	offset, err := strconv.ParseInt(offsetStr, 10, 64)
@@ -55,7 +63,7 @@ func (s *Server) Consume(w http.ResponseWriter, r *http.Request) {
 			max = m
 		}
 	}
-	msgs, err := s.Log.Read(topic, offset, max)
+	msgs, err := s.Log.Read(topic, partition, offset, max)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

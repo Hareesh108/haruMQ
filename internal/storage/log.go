@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 )
 
 type Log struct {
 	mu      sync.Mutex
 	dir     string
-	files   map[string]*os.File
-	offsets map[string]int64
+	files   map[string]map[int]*os.File // topic -> partition -> file
+	offsets map[string]map[int]int64    // topic -> partition -> offset
 }
 
 func NewLog(dir string) (*Log, error) {
@@ -21,16 +22,22 @@ func NewLog(dir string) (*Log, error) {
 	}
 	return &Log{
 		dir:     dir,
-		files:   make(map[string]*os.File),
-		offsets: make(map[string]int64),
+		files:   make(map[string]map[int]*os.File),
+		offsets: make(map[string]map[int]int64),
 	}, nil
 }
 
-func (l *Log) getFile(topic string) (*os.File, error) {
-	if f, ok := l.files[topic]; ok {
+func (l *Log) getFile(topic string, partition int) (*os.File, error) {
+	if l.files[topic] == nil {
+		l.files[topic] = make(map[int]*os.File)
+	}
+	if l.offsets[topic] == nil {
+		l.offsets[topic] = make(map[int]int64)
+	}
+	if f, ok := l.files[topic][partition]; ok {
 		return f, nil
 	}
-	path := filepath.Join(l.dir, topic+".log")
+	path := filepath.Join(l.dir, topic+"-"+strconv.Itoa(partition)+".log")
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
@@ -38,15 +45,15 @@ func (l *Log) getFile(topic string) (*os.File, error) {
 	// Recover offset
 	stat, _ := f.Stat()
 	if stat.Size() == 0 {
-		l.offsets[topic] = 0
+		l.offsets[topic][partition] = 0
 	} else {
 		offset, err := l.recoverOffset(f)
 		if err != nil {
 			return nil, err
 		}
-		l.offsets[topic] = offset
+		l.offsets[topic][partition] = offset
 	}
-	l.files[topic] = f
+	l.files[topic][partition] = f
 	return f, nil
 }
 
@@ -72,14 +79,14 @@ func (l *Log) recoverOffset(f *os.File) (int64, error) {
 	return offset, nil
 }
 
-func (l *Log) Append(topic string, msg *Message) (int64, error) {
+func (l *Log) Append(topic string, partition int, msg *Message) (int64, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	f, err := l.getFile(topic)
+	f, err := l.getFile(topic, partition)
 	if err != nil {
 		return 0, err
 	}
-	msg.Offset = l.offsets[topic]
+	msg.Offset = l.offsets[topic][partition]
 	b, err := json.Marshal(msg)
 	if err != nil {
 		return 0, err
@@ -95,14 +102,14 @@ func (l *Log) Append(topic string, msg *Message) (int64, error) {
 	if err := f.Sync(); err != nil {
 		return 0, err
 	}
-	l.offsets[topic]++
+	l.offsets[topic][partition]++
 	return msg.Offset, nil
 }
 
-func (l *Log) Read(topic string, offset int64, max int) ([]*Message, error) {
+func (l *Log) Read(topic string, partition int, offset int64, max int) ([]*Message, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	f, err := l.getFile(topic)
+	f, err := l.getFile(topic, partition)
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +148,10 @@ func (l *Log) Read(topic string, offset int64, max int) ([]*Message, error) {
 func (l *Log) Close() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	for _, f := range l.files {
-		f.Close()
+	for _, partMap := range l.files {
+		for _, f := range partMap {
+			f.Close()
+		}
 	}
 	return nil
 }
