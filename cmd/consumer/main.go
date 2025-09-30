@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -40,6 +41,11 @@ func main() {
 		os.Exit(1)
 	}
 	for _, m := range msgs {
-		fmt.Printf("[partition=%v offset=%v] %s\n", *partition, m["offset"], m["payload"])
+		payloadBase64, _ := m["payload"].(string)
+		payload, err := base64.StdEncoding.DecodeString(payloadBase64)
+		if err != nil {
+			payload = []byte(payloadBase64)
+		}
+		fmt.Printf("[partition=%v offset=%v] %s\n", *partition, m["offset"], string(payload))
 	}
 }

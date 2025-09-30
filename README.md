@@ -32,7 +32,7 @@ go build -o consumer ./cmd/consumer
 
 #### Optional flags
 - `--partition` (default: 0) — Partition number (for both producer and consumer)
-- `--addr` (default: http://localhost:9092) — Broker address
+- `--addr` (default: http://localhost:9093) — Broker address
 - `--max` (consumer, default: 10) — Max messages to fetch
 
 ## Configuration
@@ -41,7 +41,7 @@ Edit `config.yaml` to set data directory and port:
 
 ```yaml
 data_dir: "./data"
-port: 9092
+port: 9093
 ```
 
 ## How it works
