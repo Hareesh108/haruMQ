@@ -2,30 +2,33 @@
 title: HaruMQ Documentation
 ---
 
+<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
 # HaruMQ
 
-{/* ![HaruMQ Logo](../assets/houston.webp) */}
+A minimal, modern message broker written in Go.
 
-Welcome to **HaruMQ** — a minimal, modern message broker written in Go. This documentation covers all features, architecture, and usage instructions for developers and operators.
+[![GitHub](https://img.shields.io/github/stars/Hareesh108/haruMQ?style=social)](https://github.com/Hareesh108/haruMQ)
+
+[View on GitHub →](https://github.com/Hareesh108/haruMQ)
 
 ---
 
 ## 🚀 Features
 
-| Feature                        | Status      | Notes                                  |
-|--------------------------------|-------------|----------------------------------------|
-| Multiple topics                | ✅          | Supported                              |
-| Partitioned topics             | ✅          | Per-topic, multiple partitions         |
-| Append-only log storage        | ✅          | Per topic/partition, durable           |
-| Basic durability               | ✅          | Messages survive restarts              |
-| REST API                       | ✅          | `/produce` and `/consume` endpoints    |
-| CLI tools                      | ✅          | Producer & consumer                    |
-| Offset management              | ✅          | Manual (via CLI param)                 |
-| Multi-node/replication         | ❌          | Not yet                                |
-| Consumer groups                | ❌          | Not yet                                |
-| Security/auth                  | ❌          | Not yet                                |
-| Monitoring/metrics             | ❌          | Not yet                                |
+| Feature                 | Status | Notes                               |
+| ----------------------- | ------ | ----------------------------------- |
+| Multiple topics         | ✅     | Supported                           |
+| Partitioned topics      | ✅     | Per-topic, multiple partitions      |
+| Append-only log storage | ✅     | Per topic/partition, durable        |
+| Basic durability        | ✅     | Messages survive restarts           |
+| REST API                | ✅     | `/produce` and `/consume` endpoints |
+| CLI tools               | ✅     | Producer & consumer                 |
+| Offset management       | ✅     | Manual (via CLI param)              |
+| Multi-node/replication  | ❌     | Not yet                             |
+| Consumer groups         | ❌     | Not yet                             |
+| Security/auth           | ❌     | Not yet                             |
+| Monitoring/metrics      | ❌     | Not yet                             |
 
 ---
 
@@ -57,83 +60,50 @@ flowchart LR
 
 ---
 
-## 🛠️ Getting Started
+## 🛠️ Quick Start
 
-### 1. Build Binaries
+### 1. Build & Run
 
 ```sh
-# In project root
 make build
-# Or manually:
-go build -o broker ./cmd/broker
-go build -o producer ./cmd/producer
-go build -o consumer ./cmd/consumer
-```
-
-### 2. Start the Broker
-
-```sh
 ./broker
 ```
 
-### 3. Produce Messages
+### 2. Produce a Message
 
 ```sh
 ./producer --topic=orders --message="New order #123" --partition=0
 ```
 
-### 4. Consume Messages
+### 3. Consume Messages
 
 ```sh
 ./consumer --topic=orders --partition=0 --offset=0
 ```
 
-#### CLI Flags
-- `--topic` (string): Topic name
-- `--partition` (int, default: 0): Partition number
-- `--offset` (int, default: 0): Offset to start consuming from
-- `--max` (consumer, default: 10): Max messages to fetch
-- `--addr` (default: http://localhost:9092): Broker address
-
 ---
 
-## ⚙️ Configuration
+## ⚙️ Config
 
 Edit `config.yaml`:
 
 ```yaml
 data_dir: "./data"
-port: 9092
+port: 9093
 ```
 
 ---
 
-## 📦 REST API
+## 📦 API
 
-### Produce
-- **POST** `/produce`
-- Body: `{ "topic": "orders", "payload": "New order #123", "partition": 0 }`
-- Returns: `{ "offset": 0 }`
-
-### Consume
+- **POST** `/produce` — `{ "topic": "orders", "payload": "New order #123", "partition": 0 }`
 - **GET** `/consume?topic=orders&partition=0&offset=0&max=10`
-- Returns: Array of messages
-
----
-
-## 🧪 End-to-End Test
-
-You can run the built-in test:
-
-```sh
-go test -v ./e2e_test.go
-```
 
 ---
 
 ## 📝 Roadmap
 
-- [x] Partitioned topics (done)
+- [x] Partitioned topics
 - [ ] Replication
 - [ ] Consumer groups
 - [ ] Security/auth
@@ -142,19 +112,8 @@ go test -v ./e2e_test.go
 
 ---
 
-## 💡 Tips
-- All message payloads are stored as bytes and shown as plain text in the consumer CLI.
-- Each topic/partition is a separate log file: `data/orders-0.log`, `data/orders-1.log`, etc.
-- You can run multiple producers/consumers in parallel.
+## 🤝 Contribute
 
----
+[Open on GitHub](https://github.com/Hareesh108/haruMQ)
 
-## 🤝 Contributing
-
-PRs welcome! See the repo for details.
-
----
-
-## 🦄 License
-
-MIT
+</div>

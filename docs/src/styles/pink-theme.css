@@ -1,0 +1,35 @@
+/* Pink theme for HaruMQ docs */
+:root {
+  --primary: #e75480;
+  --accent: #ffb6c1;
+}
+
+body, .starlight__main {
+  background: #fff6fa;
+}
+
+h1, h2, h3, h4, h5, h6, a, strong, th {
+  color: var(--primary) !important;
+}
+
+code, pre, .astro-code {
+  background: var(--accent) !important;
+  color: #222 !important;
+}
+
+.starlight__sidebar, .starlight__sidebar a {
+  background: #fff0f6 !important;
+  color: var(--primary) !important;
+}
+
+.starlight__main a {
+  color: var(--primary) !important;
+}
+
+.starlight__main table th {
+  background: var(--accent) !important;
+}
+
+.starlight__main table td {
+  background: #fff6fa !important;
+}
