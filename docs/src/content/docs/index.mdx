@@ -1,36 +1,160 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash
-hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
-  actions:
-    - text: Example Guide
-      link: /guides/example/
-      icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
-      icon: external
-      variant: minimal
+title: HaruMQ Documentation
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Next steps
+# HaruMQ
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
-</CardGrid>
+{/* ![HaruMQ Logo](../assets/houston.webp) */}
+
+Welcome to **HaruMQ** — a minimal, modern message broker written in Go. This documentation covers all features, architecture, and usage instructions for developers and operators.
+
+---
+
+## 🚀 Features
+
+| Feature                        | Status      | Notes                                  |
+|--------------------------------|-------------|----------------------------------------|
+| Multiple topics                | ✅          | Supported                              |
+| Partitioned topics             | ✅          | Per-topic, multiple partitions         |
+| Append-only log storage        | ✅          | Per topic/partition, durable           |
+| Basic durability               | ✅          | Messages survive restarts              |
+| REST API                       | ✅          | `/produce` and `/consume` endpoints    |
+| CLI tools                      | ✅          | Producer & consumer                    |
+| Offset management              | ✅          | Manual (via CLI param)                 |
+| Multi-node/replication         | ❌          | Not yet                                |
+| Consumer groups                | ❌          | Not yet                                |
+| Security/auth                  | ❌          | Not yet                                |
+| Monitoring/metrics             | ❌          | Not yet                                |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    Producer1((Producer CLI))
+    Producer2((Producer API))
+    subgraph Broker
+      direction TB
+      API[REST API\n/produce, /consume]
+      Storage[Append-only Log\n(per topic/partition)]
+    end
+    Consumer1((Consumer CLI))
+    Consumer2((Consumer API))
+
+    Producer1 --> API
+    Producer2 --> API
+    API --> Storage
+    Storage --> API
+    API --> Consumer1
+    API --> Consumer2
+```
+
+- **Producers** send messages to topics (and partitions) via REST or CLI.
+- **Broker** writes messages to append-only log files (one per topic/partition).
+- **Consumers** read messages from a topic, partition, and offset.
+
+---
+
+## 🛠️ Getting Started
+
+### 1. Build Binaries
+
+```sh
+# In project root
+make build
+# Or manually:
+go build -o broker ./cmd/broker
+go build -o producer ./cmd/producer
+go build -o consumer ./cmd/consumer
+```
+
+### 2. Start the Broker
+
+```sh
+./broker
+```
+
+### 3. Produce Messages
+
+```sh
+./producer --topic=orders --message="New order #123" --partition=0
+```
+
+### 4. Consume Messages
+
+```sh
+./consumer --topic=orders --partition=0 --offset=0
+```
+
+#### CLI Flags
+- `--topic` (string): Topic name
+- `--partition` (int, default: 0): Partition number
+- `--offset` (int, default: 0): Offset to start consuming from
+- `--max` (consumer, default: 10): Max messages to fetch
+- `--addr` (default: http://localhost:9092): Broker address
+
+---
+
+## ⚙️ Configuration
+
+Edit `config.yaml`:
+
+```yaml
+data_dir: "./data"
+port: 9092
+```
+
+---
+
+## 📦 REST API
+
+### Produce
+- **POST** `/produce`
+- Body: `{ "topic": "orders", "payload": "New order #123", "partition": 0 }`
+- Returns: `{ "offset": 0 }`
+
+### Consume
+- **GET** `/consume?topic=orders&partition=0&offset=0&max=10`
+- Returns: Array of messages
+
+---
+
+## 🧪 End-to-End Test
+
+You can run the built-in test:
+
+```sh
+go test -v ./e2e_test.go
+```
+
+---
+
+## 📝 Roadmap
+
+- [x] Partitioned topics (done)
+- [ ] Replication
+- [ ] Consumer groups
+- [ ] Security/auth
+- [ ] Monitoring/metrics
+- [ ] Web UI
+
+---
+
+## 💡 Tips
+- All message payloads are stored as bytes and shown as plain text in the consumer CLI.
+- Each topic/partition is a separate log file: `data/orders-0.log`, `data/orders-1.log`, etc.
+- You can run multiple producers/consumers in parallel.
+
+---
+
+## 🤝 Contributing
+
+PRs welcome! See the repo for details.
+
+---
+
+## 🦄 License
+
+MIT
