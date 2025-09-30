@@ -76,9 +76,9 @@ port: 9093
 - Basic durability (messages survive restarts)
 - Simple REST API for produce/consume (with partition support)
 - Basic CLI for producer and consumer (with partition support)
+- Partitioned topics
 
 ### Not yet implemented (for production readiness)
-- Partitioned topics
 - Replication
 - Consumer groups
 - Log compaction and retention
